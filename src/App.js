@@ -1,23 +1,46 @@
-import logo from './logo.svg';
-import './App.css';
-import PhotoCard from './components/PhotoCard';
-// import Counter from './components/Counter';
-// import Prop from './components/Props';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import PhotoCard from "./components/PhotoCard";
+
 function App() {
+  const [photos, setPhotos] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchPhotos();
+  }, []);
+
+  const fetchPhotos = async () => {
+    setLoading(true); // Show loading state
+    try {
+      const response = await axios.get(
+        "https://api.unsplash.com/photos",
+        {
+          params: { per_page: 10 }, // Fetch 10 photos
+          headers: {
+            Authorization: `Client-ID ${process.env.REACT_APP_UNSPLASH_ACCESS_KEY}`,
+
+          },
+        }
+      );
+      setPhotos(response.data); // Store fetched photos
+    } catch (error) {
+      console.error("Error fetching photos:", error);
+    } finally {
+      setLoading(false); // Hide loading state
+    }
+  };
+
   return (
     <div style={styles.gallery}>
-      <PhotoCard
-        src="https://via.placeholder.com/200"
-        name="Alice"
-      />
-      <PhotoCard
-        src="https://via.placeholder.com/200"
-        name="Bob"
-      />
-      <PhotoCard
-        src="https://via.placeholder.com/200"
-        name="Charlie"
-      />
+      {loading && <p>Loading...</p>}
+      {photos.map((photo) => (
+        <PhotoCard
+          key={photo.id}
+          src={photo.urls.small}
+          name={photo.user.name}
+        />
+      ))}
     </div>
   );
 }
@@ -25,11 +48,11 @@ function App() {
 const styles = {
   gallery: {
     display: "flex",
+    flexWrap: "wrap",
     gap: "20px",
     justifyContent: "center",
     margin: "20px",
   },
 };
-
 
 export default App;
