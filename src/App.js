@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import PhotoCard from "./components/PhotoCard";
+import styles from "./components/Gallery.module.css"
 
 function App() {
   const [photos, setPhotos] = useState([]);
@@ -48,7 +49,7 @@ function App() {
   };
 
   return (
-    <div style={styles.gallery}>
+    <div className={styles.gallery}>
       {photos.map((photo) => (
         <PhotoCard
           key={photo.id}
@@ -60,15 +61,5 @@ function App() {
     </div>
   );
 }
-
-const styles = {
-  gallery: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "20px",
-    justifyContent: "center",
-    margin: "20px",
-  },
-};
 
 export default App;
