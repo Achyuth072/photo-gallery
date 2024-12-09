@@ -7,6 +7,8 @@ function App() {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
+  const [error, setError] = useState(null);
+
 
   useEffect(() => {
     fetchPhotos();
@@ -30,6 +32,7 @@ function App() {
 
   const fetchPhotos = async () => {
     setLoading(true);
+    setError(null); // Clear any previous error before fetching
     try {
       const response = await axios.get(
         "https://api.unsplash.com/photos",
@@ -42,7 +45,7 @@ function App() {
       );
       setPhotos((prevPhotos) => [...prevPhotos, ...response.data]);
     } catch (error) {
-      console.error("Error fetching photos:", error);
+      setError("Failed to fetch photos. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -58,6 +61,7 @@ function App() {
         />
       ))}
       {loading && <p>Loading...</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
     </div>
   );
 }
