@@ -33,6 +33,15 @@ function App() {
   const fetchPhotos = async () => {
     setLoading(true);
     setError(null); // Clear any previous error before fetching
+
+    //to check if the photos are cached
+    const cachedPhotos = localStorage.getItem("photos-page-${page}");
+    if (cachedPhotos) {
+      setPhotos((prevPhotos) => [...prevPhotos, ...JSON.parse(cachedPhotos)]);
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await axios.get(
         "https://api.unsplash.com/photos",
@@ -44,6 +53,13 @@ function App() {
         }
       );
       setPhotos((prevPhotos) => [...prevPhotos, ...response.data]);
+
+      // cache the photos
+      localStorage.setItem(
+        `photos-page-${page}`,
+        JSON.stringify(response.data)
+      );
+
     } catch (error) {
       setError("Failed to fetch photos. Please try again later.");
     } finally {
