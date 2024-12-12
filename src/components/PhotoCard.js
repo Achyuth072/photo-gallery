@@ -10,7 +10,7 @@ function PhotoCard({ src, name }) {
       <p>{name}</p>
       <button
         onClick={() => setLikes(likes + 1)}
-        className={styles.button}
+        className={styles.button} 
       >
         ❤️ {likes} Likes
       </button>
