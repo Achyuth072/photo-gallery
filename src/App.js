@@ -9,57 +9,73 @@ function App() {
   const [page, setPage] = useState(1);
   const [error, setError] = useState(null);
 
-
+  // Fetch photos for the first page on component mount
   useEffect(() => {
-    fetchPhotos();
-    // eslint-disable-next-line
-  }, [page]);
+    const fetchInitialPhotos = async () => {
+      setLoading(true);
+      setError(null);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (
-        window.innerHeight + document.documentElement.scrollTop >=
-        document.documentElement.offsetHeight - 100 // Trigger near the bottom
-      ) {
-        setPage((prevPage) => prevPage + 1); // Increment the page number
+      try {
+        const response = await axios.get("https://api.unsplash.com/photos", {
+          params: { per_page: 10, page: 1 },
+          headers: {
+            Authorization: `Client-ID ${process.env.REACT_APP_UNSPLASH_ACCESS_KEY}`,
+          },
+        });
+
+        // Cache page 1
+        sessionStorage.setItem("photos-page-1", JSON.stringify(response.data));
+        setPhotos(response.data);
+      } catch (error) {
+        setError("Failed to fetch photos. Please try again later.");
+      } finally {
+        setLoading(false);
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
-
-    return () => window.removeEventListener("scroll", handleScroll); // Cleanup on unmount
+    fetchInitialPhotos();
   }, []);
 
+  // Infinite scroll fetch for subsequent pages
   const fetchPhotos = async () => {
-    setLoading(true);
-    setError(null); // Clear any previous error before fetching
+    if (loading) return; // Prevent duplicate requests
 
-    //to check if the photos are cached
-    const cachedPhotos = localStorage.getItem("photos-page-${page}");
-    if (cachedPhotos) {
-      setPhotos((prevPhotos) => [...prevPhotos, ...JSON.parse(cachedPhotos)]);
-      setLoading(false);
-      return;
-    }
+    setLoading(true);
+    setError(null);
 
     try {
-      const response = await axios.get(
-        "https://api.unsplash.com/photos",
-        {
+      const cachedPhotos = sessionStorage.getItem(`photos-page-${page}`);
+      if (cachedPhotos) {
+        const parsedPhotos = JSON.parse(cachedPhotos);
+        setPhotos((prevPhotos) => {
+          const existingIds = new Set(prevPhotos.map((photo) => photo.id));
+          const uniquePhotos = parsedPhotos.filter(
+            (photo) => !existingIds.has(photo.id)
+          );
+          return [...prevPhotos, ...uniquePhotos];
+        });
+      } else {
+        const response = await axios.get("https://api.unsplash.com/photos", {
           params: { per_page: 10, page },
           headers: {
             Authorization: `Client-ID ${process.env.REACT_APP_UNSPLASH_ACCESS_KEY}`,
           },
-        }
-      );
-      setPhotos((prevPhotos) => [...prevPhotos, ...response.data]);
+        });
 
-      // cache the photos
-      localStorage.setItem(
-        `photos-page-${page}`,
-        JSON.stringify(response.data)
-      );
+        // Cache the new page
+        sessionStorage.setItem(
+          `photos-page-${page}`,
+          JSON.stringify(response.data)
+        );
 
+        setPhotos((prevPhotos) => {
+          const existingIds = new Set(prevPhotos.map((photo) => photo.id));
+          const uniquePhotos = response.data.filter(
+            (photo) => !existingIds.has(photo.id)
+          );
+          return [...prevPhotos, ...uniquePhotos];
+        });
+      }
     } catch (error) {
       setError("Failed to fetch photos. Please try again later.");
     } finally {
@@ -67,16 +83,38 @@ function App() {
     }
   };
 
+  // Infinite scroll handler
+  useEffect(() => {
+    if (page === 1) return; // Skip the first page, already fetched during mount
+    fetchPhotos();
+  }, [page]); // Trigger fetchPhotos when `page` changes
+
+  // Scroll event listener for infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop + 1 >=
+        document.documentElement.scrollHeight
+      ) {
+        setPage((prevPage) => prevPage + 1); // Increment page when reaching the bottom
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Render
   return (
     <div className={styles.gallery}>
-      {photos.map((photo) => (
+      {photos.map((photo, index) => (
         <PhotoCard
           key={photo.id}
           src={photo.urls.small}
           name={photo.user.name}
+          delay={Math.min(index * 0.05, 1)} // Reduce the delay factor and limit it to 1 second max
         />
       ))}
-      {loading && <p>Loading...</p>}
       {error && <p style={{ color: "red" }}>{error}</p>}
     </div>
   );

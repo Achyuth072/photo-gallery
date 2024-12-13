@@ -5,10 +5,13 @@
   border-radius: 5px;
   max-width: 200px;
   transition: transform 0.3s, box-shadow 0.3s;
+  opacity: 0; /* Start with 0 for fade-in */
+  transform: translateY(10px); /* Start slightly below */
+  animation: fadeIn 0.5s ease-in-out forwards;
 }
 
 .card:hover {
-  transform: scale(1.05);
+  transform: scale(1.05); /* Hover effect */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
@@ -16,4 +19,30 @@
   width: 100%;
   border-radius: 5px;
   object-fit: cover;
+}
+
+.button {
+  margin-top: 8px;
+  background-color: #f04f5a;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.button:hover {
+  background-color: #e03b46;
+}
+
+/* Fade-In Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
